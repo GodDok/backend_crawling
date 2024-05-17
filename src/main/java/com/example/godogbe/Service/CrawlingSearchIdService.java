@@ -44,7 +44,7 @@ public class CrawlingSearchIdService {
         String categoryxPath = selectionInfo.getBigCategory();
         String[] secondCheck = selectionInfo.getCheckBoxId();
 
-        // 체크박스 클릭을 기다린 후 클릭
+        // 체크박스가 나타나길 기다린 후 클릭
         wait.until(ExpectedConditions.elementToBeClickable(By.xpath(categoryxPath)));
         webDriver.findElement(By.xpath(categoryxPath)).click();
         sleep(3000);
@@ -72,19 +72,19 @@ public class CrawlingSearchIdService {
                 String dataAuCustomMap = inner.getAttribute("data-au-custom-map");
                 if (dataAuCustomMap != null) {
                     JSONObject json = new JSONObject(dataAuCustomMap);
-                    String id = json.getString("id");  // id가 null일때 처리방안 검토해야함
+                    String id = json.getString("id");
                     PolicySearch policySearch = PolicySearch.builder()
                             .policyId(id)
                             .searchCondition(sortingName)
                             .build();
                     if(startupSupportInformationRepository.findById(id).isEmpty()){
-                        //정책id가 이미 저장되어있지 않는 경우에는 정책id내용 크롤링 시작함
+                        //정책정보DB에 해당 정책 id가 없는 경우에는 정책id내용 크롤링 시작함
                         System.out.println("id에 해당하는 값이 존재하지 않습니다.정보찾기를 수행합니다.");
                         getPolicySupportInfoFromId(id);
                     }
-                    List<PolicySearch> searchResult = policySearchRepository.findByPolicyIdAndSearchCondition(id,sortingName);
-                    if(!searchResult.isEmpty()){
-                        //DB에 이미 똑같은 항목이 존재하는걸 발견하는 즉시 for문 종료
+                    //DB에 검색조건과 정책id가 겹치는게 있는지 검색수행
+                    if(!policySearchRepository.findByPolicyIdAndSearchCondition(id,sortingName).isEmpty()){
+                        //DB에 이미 똑같은 항목이 존재하는걸 발견하는 즉시 for문 종료시켜서 해당 검색조건의 검색수행 중단
                         System.out.println(" "+sortingName+"에 이미 저장된 항목이 존재합니다. procedure 종료");
                         break;
                     }else{
@@ -124,8 +124,7 @@ public class CrawlingSearchIdService {
                 resultIdSet.add(policySearch.getPolicyId());
             }
         }
-        String[] resultArray = resultIdSet.toArray(new String[resultIdSet.size()]);
-        return resultArray;
+        return resultIdSet.toArray(new String[0]);
     }
 
     //주어진 검색조건을 모두 해당하는 정책id를 반환
@@ -161,7 +160,7 @@ public class CrawlingSearchIdService {
         PageRequest pageRequest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "createdAt"));
 
         // 엔티티 페이지 조회
-        Page<PolicySupportInformationDto> entityPage = startupSupportInformationRepository.findAll(pageRequest)
+        return startupSupportInformationRepository.findAll(pageRequest)
                 .map(entity -> PolicySupportInformationDto.builder()
                         .id(entity.getId())
                         .deadlineForApplication(entity.getDeadlineForApplication())
@@ -171,7 +170,6 @@ public class CrawlingSearchIdService {
                         .url(entity.getUrl())
                         .build());
 
-        return entityPage;
     }
 
     public Page<PolicySupportInformationDto> pagingSearchPolicyInfoByPolicyId(List<String> policyIds, Pageable pageable){
@@ -180,7 +178,7 @@ public class CrawlingSearchIdService {
         PageRequest pageRequest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "id"));
 
         // 엔티티 페이지 조회
-        Page<PolicySupportInformationDto> entityPage = startupSupportInformationRepository.findByIdIn(policyIds,pageable)
+        return startupSupportInformationRepository.findByIdIn(policyIds,pageRequest)
                 .map(entity -> PolicySupportInformationDto.builder()
                         .id(entity.getId())
                         .deadlineForApplication(entity.getDeadlineForApplication())
@@ -190,11 +188,8 @@ public class CrawlingSearchIdService {
                         .url(entity.getUrl())
                         .build());
 
-        return entityPage;
     }
-//    private List<String> sortMatching(List<String> categories){
-//        List<String> resultList = new ArrayList<>();
-//    }
+
 
     /**
      * 정책id를 통해 해당 정책정보에 접근하여 필요한 정보들을 크롤링하는 함수.
@@ -214,6 +209,7 @@ public class CrawlingSearchIdService {
         WebElement button = drive.findElement(By.xpath("//*[@id=\"root\"]/div[3]/div[3]/div[1]/div/div[4]/button[2]"));
         // data-au-custom-map 속성 값 가져오기
         String dataValue = button.getAttribute("data-au-custom-map");
+        //정책정보 원본 사이트 주소
         String redirectUrl = "";
         try {
             // JSON 파싱
@@ -234,7 +230,7 @@ public class CrawlingSearchIdService {
      * XPath에 해당하는 요소가 나타날때까지 기다렸다가
      * @param wait driver와 몇초기다릴지가 설정되어 있는 WebDriverWait 인스턴스
      * @param XPath 값을 추출해낼 XPath 경로
-     * @return
+     * @return 추출해낸 문자열값
      */
     private static String getStringValueFromElement(WebDriverWait wait, String XPath) {
         WebElement element = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(XPath)));
@@ -250,6 +246,11 @@ public class CrawlingSearchIdService {
         }
     }
 
+    /**
+     * 웹드라이버에서 클릭을 수행하려고 하는데 화면에 나타나지 않은 경우에 자바스크립트를 사용해서 강제로 버튼 클릭 수행
+     * @param webDriver 클릭을 수행하는 웹드라이버
+     * @param button 선택한 버튼요소
+     */
     private static void  clickProcedure(WebDriver webDriver, WebElement button) {
         try{
             button.click();

@@ -11,6 +11,7 @@ public class SchedulerService {
 
     String[] bigSortCriteria = new String[]{"/html/body/div/div[3]/div[3]/div[3]/div/div[2]/div/ul/li[1]/button","/html/body/div/div[3]/div[3]/div[3]/div/div[2]/div/ul/li[2]/button","/html/body/div/div[3]/div[3]/div[3]/div/div[2]/div/ul/li[3]/button"};
     String[] businessType = new String[]{"/html/body/div/div[3]/div[3]/div[3]/div/div[2]/div[2]/ul[1]/li[1]/button","/html/body/div/div[3]/div[3]/div[3]/div/div[2]/div[2]/ul[1]/li[2]/button","/html/body/div/div[3]/div[3]/div[3]/div/div[2]/div[2]/ul[2]/li[1]/button","/html/body/div/div[3]/div[3]/div[3]/div/div[2]/div[2]/ul[2]/li[2]/button","/html/body/div/div[3]/div[3]/div[3]/div/div[2]/div[2]/ul[2]/li[3]/button"};
+    //사업종류 index넘버
     int[] businessField = new int[]{1,2,4,5,6,7,8,13,14};
     String location1 = "/html/body/div/div[3]/div[3]/div[3]/div/div[2]/div[2]/div/ul/li[14]/button";
     String location2 = "/html/body/div/div[3]/div[3]/div[3]/div/div[2]/div[2]/div/ul[2]/li[2]/button";
