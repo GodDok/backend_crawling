@@ -20,7 +20,9 @@ public class SchedulerService {
     @Autowired
     CrawlingSearchIdService crawlingSearchIdService;
     //3600000
-    @Scheduled(fixedDelay = 3600000)
+    //개발을 하는 동안 크롤링을 지연시키기 위해 실행후 20분뒤부터 크롤링 수행하도록 initialDelay 추가
+    //initialDelay = 600000,
+    @Scheduled(fixedDelay = 43200000)
     public void crawling() {
 
         //사업유형 크롤링

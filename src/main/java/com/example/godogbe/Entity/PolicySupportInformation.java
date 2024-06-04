@@ -32,18 +32,25 @@ public class PolicySupportInformation {
     @Column(name = "url", length = 2000)
     private String url;
 
+    @Column(name = "institution_name")
+    private String institutionName;
+
+    @Column(name = "supply_location")
+    private String supplyLocation;
+
     @Column(name = "created_at")
     @CreationTimestamp
     private LocalDateTime createdAt;
 
     @Builder
-    public PolicySupportInformation(String id, String deadlineForApplication, String title, String businessOverview, String amount, String url) {
+    public PolicySupportInformation(String id, String deadlineForApplication, String title, String businessOverview, String amount, String url, String institutionName, String supplyLocation) {
         this.id = id;
         this.deadlineForApplication = deadlineForApplication;
         this.title = title;
         this.businessOverview = businessOverview;
         this.amount = amount;
         this.url = url;
+        this.institutionName = institutionName;
+        this.supplyLocation = supplyLocation;
     }
-
 }

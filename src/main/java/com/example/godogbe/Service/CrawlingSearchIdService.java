@@ -27,6 +27,9 @@ import java.util.*;
 
 import org.json.JSONObject;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+
+import static com.example.godogbe.etc.CategoryTransformer.sortMatching;
 
 
 @Service
@@ -115,10 +118,11 @@ public class CrawlingSearchIdService {
 
     }
 
-    public String[] getPolicySupportInfo(String[] categories){
+    public String[] getPolicySupportInfo(List<String> categories){
         //조건에 해당하는 모든 정책정보 반환
+        List<String> convertedCategories = sortMatching(categories);
         HashSet<String> resultIdSet = new HashSet<>();
-        for(String category : categories){
+        for(String category : convertedCategories){
             List<PolicySearch> bySearchCondition = policySearchRepository.findBySearchCondition(category);
             for(PolicySearch policySearch : bySearchCondition){
                 resultIdSet.add(policySearch.getPolicyId());
@@ -129,8 +133,10 @@ public class CrawlingSearchIdService {
 
     //주어진 검색조건을 모두 해당하는 정책id를 반환
     public List<String> getPolicySupportWhichQualifiesAll(List<String> categories){
+        //입력 카테고리를 내부 카테고리에 맞게끔 변환
+        List<String> convertedCategories = sortMatching(categories);
         HashMap<String,Integer> hashMap = new HashMap<>();
-        for(String category : categories){
+        for(String category : convertedCategories){
             List<PolicySearch> bySearchCondition = policySearchRepository.findBySearchCondition(category);
             for(PolicySearch policySearch : bySearchCondition){
                 hashMap.put(policySearch.getPolicyId(),hashMap.getOrDefault(policySearch.getPolicyId(),0)+1);
@@ -143,7 +149,6 @@ public class CrawlingSearchIdService {
                 resultList.add(entry.getKey());
             }
         }
-
         return resultList;
     }
 
@@ -168,6 +173,8 @@ public class CrawlingSearchIdService {
                         .businessOverview(entity.getBusinessOverview())
                         .amount(entity.getAmount())
                         .url(entity.getUrl())
+                        .institutionName(entity.getInstitutionName())
+                        .supplyLocation(entity.getSupplyLocation())
                         .build());
 
     }
@@ -186,6 +193,8 @@ public class CrawlingSearchIdService {
                         .businessOverview(entity.getBusinessOverview())
                         .amount(entity.getAmount())
                         .url(entity.getUrl())
+                        .institutionName(entity.getInstitutionName())
+                        .supplyLocation(entity.getSupplyLocation())
                         .build());
 
     }
@@ -205,6 +214,8 @@ public class CrawlingSearchIdService {
         String date = getStringValueFromElement(wait, "//*[@id=\"root\"]/div[3]/div[3]/div[1]/div/div[3]/dl/dd[1]/span[1]");
         String businessOverview = getStringValueFromElement(wait, "//*[@id=\"root\"]/div[3]/div[3]/div[2]/div[1]/div/div[3]/p");
         String amount = getStringValueFromElement(wait, "//*[@id=\"root\"]/div[3]/div[3]/div[1]/div/ul/li[2]/div[3]/span");
+        String institutionName = getStringValueFromElement(wait, "//*[@id=\"root\"]/div[3]/div[3]/div[1]/div/div[2]/span");
+        String supplyLocation = getStringValueFromElement(wait, "//*[@id=\"root\"]/div[3]/div[3]/div[1]/div/ul/li[1]/div[3]/span");
 
         WebElement button = drive.findElement(By.xpath("//*[@id=\"root\"]/div[3]/div[3]/div[1]/div/div[4]/button[2]"));
         // data-au-custom-map 속성 값 가져오기
@@ -220,7 +231,7 @@ public class CrawlingSearchIdService {
             System.out.println("Error parsing JSON");
             e.printStackTrace();
         }
-        PolicySupportInformationDto policySupportInformationDTO = new PolicySupportInformationDto(policyId,date,title,businessOverview,amount,redirectUrl);
+        PolicySupportInformationDto policySupportInformationDTO = new PolicySupportInformationDto(policyId,date,title,businessOverview,amount,redirectUrl,institutionName,supplyLocation);
         startupSupportInformationRepository.save(policySupportInformationDTO.toEntity(policySupportInformationDTO));
         drive.quit();
         return policySupportInformationDTO;
@@ -262,6 +273,8 @@ public class CrawlingSearchIdService {
 
     private static WebDriver getWebDriver(String url) {
 
+        System.setProperty("webdriver.chrome.driver", "/usr/local/bin/chromedriver");
+
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--headless");        // 헤드리스 모드 활성화
         options.addArguments("--disable-gpu"); // GPU 하드웨어 가속 비활성화, 불필요한 리소스 사용 감소
@@ -269,9 +282,11 @@ public class CrawlingSearchIdService {
         options.addArguments("--window-size=1440,788"); // 브라우저 창 크기 설정
 
         WebDriver webDriver = new ChromeDriver(options);
+        webDriver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(60));
         webDriver.get(url);
         return webDriver;
     }
+
 
     private static Optional<LocalDate> convertStringToDate(String dateString) {
         //  날짜 문자열을 LocalDate객체로 저장해서 돌려주는 함수

@@ -23,13 +23,19 @@ public class PolicySupportInformationDto {
     @Column(name = "url", length = 4000)
     private String url;
 
-    public PolicySupportInformationDto(String id, String deadlineForApplication, String title, String businessOverview, String amount, String url) {
+    private String institutionName;
+
+    private String supplyLocation;
+
+    public PolicySupportInformationDto(String id, String deadlineForApplication, String title, String businessOverview, String amount, String url, String institutionName, String supplyLocation) {
         this.id = id;
         this.deadlineForApplication = deadlineForApplication;
         this.title = title;
         this.businessOverview = businessOverview;
         this.amount = amount;
         this.url = url;
+        this.institutionName = institutionName;
+        this.supplyLocation = supplyLocation;
     }
 
     public PolicySupportInformation toEntity(PolicySupportInformationDto requestDTO) {
@@ -40,6 +46,8 @@ public class PolicySupportInformationDto {
                 .businessOverview(requestDTO.getBusinessOverview())
                 .amount(requestDTO.getAmount())
                 .url(requestDTO.getUrl())
+                .institutionName(requestDTO.getInstitutionName())
+                .supplyLocation(requestDTO.getSupplyLocation())
                 .build();
     }
 }
