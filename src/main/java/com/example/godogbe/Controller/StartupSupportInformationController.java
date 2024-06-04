@@ -17,6 +17,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api/v1")
 public class StartupSupportInformationController {
 
     private final CrawlingSearchIdService crawlingSearchIdService;
@@ -38,22 +39,11 @@ public class StartupSupportInformationController {
         return ResponseEntity.ok(result);
     }
 
-    //소분류 목록을 보내면 해당하는 정책정보id 반환함
-    @GetMapping(value = "/searchByCategory")
-    public ResponseEntity<String[]> searchByCategory(@RequestParam String category) {
-        String[] categoryinArr = new String[]{category};
-        String[] result = crawlingSearchIdService.getPolicySupportInfo(categoryinArr);
-        if (result == null) {
-            return ResponseEntity.notFound().build(); // 404 Not Found
-        }
-       return ResponseEntity.ok(result);
-    }
 
     //모든 조건을 만족하는 정책정보반환
     @GetMapping(value = "/searchQualifiesAllCondition")
-    public Page<PolicySupportInformationDto> searchByCateogires(searchQualifiesAllConditionRequestDto categories, Pageable pageable){
-        List<String> convertedCategories = CategoryTransformer.sortMatching(categories.getCategories());
-        List<String> resultPolicyId = crawlingSearchIdService.getPolicySupportWhichQualifiesAll(convertedCategories);
+    public Page<PolicySupportInformationDto> searchByCateogires(@RequestParam List<String> categories, Pageable pageable){
+        List<String> resultPolicyId = crawlingSearchIdService.getPolicySupportWhichQualifiesAll(categories);
         return crawlingSearchIdService.pagingSearchPolicyInfoByPolicyId(resultPolicyId,pageable);
     }
 
